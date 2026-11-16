@@ -1,0 +1,82 @@
+name: Refresh jobs
+
+# Server-side job discovery. API keys and the Firebase service account stay in
+# GitHub Secrets and never reach the browser.
+on:
+  schedule:
+    - cron: '30 2 * * *'   # daily full refresh, 08:00 IST
+    - cron: '15 */3 * * *' # every 3 hours: only runs if "Refresh jobs" was pressed in the dashboard
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'full = discover + verify everything; queue = only pending dashboard requests'
+        type: choice
+        options: [full, queue]
+        default: full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-jobs
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+          HAS_OWNERS: ${{ secrets.OWNER_UIDS != '' }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$HAS_SA" != "true" ] || [ "$HAS_OWNERS" != "true" ]; then
+            msg="FIREBASE_SERVICE_ACCOUNT and OWNER_UIDS secrets are required. See FIREBASE_SETUP.md sections 5-6."
+            if [ "$EVENT" = "schedule" ]; then
+              echo "::notice title=Refresh skipped::$msg"
+              echo "run=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error title=Refresh not configured::$msg"
+              exit 1
+            fi
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.run == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.run == 'true'
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.check.outputs.run == 'true'
+        run: npm ci
+
+      - name: Run refresh
+        if: steps.check.outputs.run == 'true'
+        env:
+          REFRESH_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '30 2 * * *' && 'full' || 'queue') }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          OWNER_UIDS: ${{ secrets.OWNER_UIDS }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MAX_JOBS_PER_RUN: ${{ vars.LLM_MAX_JOBS_PER_RUN }}
+          SMTP_URL: ${{ secrets.SMTP_URL }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+        run: |
+          echo "Mode: $REFRESH_MODE"
+          npm run refresh
