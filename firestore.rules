@@ -1,0 +1,121 @@
+rules_version = '2';
+
+// Every document lives under users/{uid}. Only that signed-in user can read it.
+// Discovery data (jobs, refresh metadata, AI text) is written by the refresh
+// job through the Admin SDK, which bypasses these rules; the browser may only
+// change the fields listed below, and every write is shape- and size-checked.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    function str(v, max) { return v is string && v.size() <= max; }
+    function strOrNull(v, max) { return v == null || str(v, max); }
+    function dateOrNull(v) { return v == null || (v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')); }
+    function onlyKeys(keys) { return request.resource.data.keys().hasOnly(keys); }
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function validStatus(s) {
+      return s in ['Discovered', 'Shortlisted', 'Saved', 'Ready to Apply', 'Applied', 'Assessment',
+                   'Interview Scheduled', 'Interview Completed', 'Offer Received', 'Rejected', 'Withdrawn', 'Not Interested'];
+    }
+
+    match /users/{uid} {
+      allow read: if owner(uid);
+      allow create: if owner(uid) && onlyKeys(['email', 'displayName', 'createdAt', 'lastLoginAt']);
+      allow update: if owner(uid) && changedOnly(['email', 'displayName', 'lastLoginAt']);
+      allow delete: if false;
+
+      // Vacancies: created/closed only by the refresh job. You can change status and the match result.
+      match /jobs/{jobId} {
+        allow read: if owner(uid);
+        allow create, delete: if false;
+        allow update: if owner(uid)
+          && changedOnly(['status', 'statusUpdatedAt', 'match'])
+          && validStatus(request.resource.data.status)
+          && request.resource.data.statusUpdatedAt is string
+          && (request.resource.data.match == null || request.resource.data.match is map);
+      }
+
+      // Application records are keyed by job id, so one vacancy can only have one application.
+      function validApplication(d) {
+        return d.keys().hasOnly(['jobId', 'company', 'title', 'applicationUrl', 'appliedDate', 'resumeVersionId',
+                                 'resumeVersionName', 'notes', 'referral', 'nextFollowUp', 'interviewDate', 'country',
+                                 'matchScore', 'createdAt', 'updatedAt', 'history'])
+          && str(d.company, 200) && d.company.size() > 0
+          && str(d.title, 200) && d.title.size() > 0
+          && str(d.applicationUrl, 2000) && d.applicationUrl.matches('^https?://.+')
+          && d.appliedDate is string && d.appliedDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && str(d.notes, 5000) && str(d.referral, 500)
+          && dateOrNull(d.nextFollowUp) && dateOrNull(d.interviewDate)
+          && strOrNull(d.resumeVersionId, 100) && strOrNull(d.resumeVersionName, 100)
+          && (d.matchScore == null || (d.matchScore is number && d.matchScore >= 0 && d.matchScore <= 100))
+          && d.history is list && d.history.size() <= 300;
+      }
+      match /applications/{jobId} {
+        allow read: if owner(uid);
+        allow create: if owner(uid) && validApplication(request.resource.data) && request.resource.data.jobId == jobId
+          && exists(/databases/$(database)/documents/users/$(uid)/jobs/$(jobId));
+        allow update: if owner(uid) && validApplication(request.resource.data) && request.resource.data.jobId == resource.data.jobId;
+        allow delete: if owner(uid);
+      }
+
+      // Resume versions: AI profile text is server-written only.
+      function validResume(d) {
+        return d.keys().hasOnly(['id', 'name', 'fileName', 'fileType', 'fileSize', 'hasStoredFile', 'text', 'textHash',
+                                 'profile', 'aiProfile', 'isPrimary', 'createdAt', 'updatedAt'])
+          && str(d.name, 80) && d.name.size() > 0 && str(d.fileName, 200) && d.fileType in ['pdf', 'docx']
+          && d.fileSize is int && d.fileSize <= 8388608
+          && str(d.text, 60000) && d.profile is map && d.isPrimary is bool;
+      }
+      match /resumes/{rid} {
+        allow read: if owner(uid);
+        allow create: if owner(uid) && validResume(request.resource.data) && request.resource.data.id == rid && request.resource.data.aiProfile == null;
+        allow update: if owner(uid) && validResume(request.resource.data) && request.resource.data.id == rid
+          && (request.resource.data.aiProfile == null || request.resource.data.aiProfile == resource.data.aiProfile);
+        allow delete: if owner(uid);
+      }
+      match /resumeFiles/{rid} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && onlyKeys(['data', 'mime', 'name', 'size'])
+          && str(request.resource.data.data, 1000000) && str(request.resource.data.mime, 120)
+          && str(request.resource.data.name, 200) && request.resource.data.size is int;
+      }
+
+      match /settings/{docId} {
+        allow read: if owner(uid);
+        allow write: if owner(uid) && docId == 'preferences'
+          && request.resource.data.countries is list && request.resource.data.countries.size() <= 40
+          && request.resource.data.targetTitles is list && request.resource.data.targetTitles.size() <= 60
+          && request.resource.data.excludeTitleKeywords is list && request.resource.data.excludeTitleKeywords.size() <= 60
+          && request.resource.data.boards is list && request.resource.data.boards.size() <= 300
+          && request.resource.data.minRecommendedScore is number
+          && request.resource.data.minRecommendedScore >= 0 && request.resource.data.minRecommendedScore <= 100
+          && request.resource.data.maxQueriesPerSource is number && request.resource.data.maxQueriesPerSource <= 100
+          && request.resource.data.notifications is map;
+      }
+
+      match /notifications/{nid} {
+        allow read, delete: if owner(uid);
+        allow create: if owner(uid) && onlyKeys(['id', 'kind', 'title', 'body', 'jobId', 'createdAt', 'read'])
+          && request.resource.data.id == nid && str(request.resource.data.title, 300) && str(request.resource.data.body, 1000)
+          && request.resource.data.read == false;
+        allow update: if owner(uid) && changedOnly(['read']) && request.resource.data.read is bool;
+      }
+
+      // The browser may only queue a refresh; results are written by the refresh job.
+      match /meta/{docId} {
+        allow read: if owner(uid);
+        allow create: if owner(uid) && docId == 'refresh' && onlyKeys(['requestedAt']) && request.resource.data.requestedAt is string;
+        allow update: if owner(uid) && docId == 'refresh' && changedOnly(['requestedAt']) && request.resource.data.requestedAt is string;
+      }
+      match /refreshRuns/{runId} {
+        allow read: if owner(uid);
+        allow write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
