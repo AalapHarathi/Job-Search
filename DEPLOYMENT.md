@@ -4,19 +4,16 @@
 
 GitHub Pages on a **free** GitHub account only publishes from **public** repositories (private-repo Pages needs GitHub Pro or higher). A public repo is safe here: it contains code only — no keys, no resume, no application data. Your data lives in Firestore behind sign-in. If you'd rather keep the code private, use GitHub Pro, or deploy `dist/` to Firebase Hosting instead.
 
-## 1. Create the repository and push
+## 1. Repository
 
-```bash
-cd career-intel
-git init
-git add .
-git commit -m "Career Intel"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/career-intel.git
-git push -u origin main
-```
+This project lives at <https://github.com/AalapHarathi/Job-Search> (public). The site URL is **<https://aalapharathi.github.io/Job-Search/>**. `deploy.yml` sets the Vite base path to `/<repo-name>/` automatically, so renaming the repo only needs a redeploy.
 
-(Or create the repo on github.com and upload the files.) The site URL will be `https://YOUR-USERNAME.github.io/career-intel/`. The build sets the base path from the repo name automatically.
+Workflows in `.github/workflows/`:
+
+| File | Trigger | What it does |
+|---|---|---|
+| `deploy.yml` | push to `main`, manual | `npm ci` → engine self-test → `tsc -b` + `vite build` → checks `dist/` → uploads **only `dist/`** → deploys to Pages |
+| `refresh-jobs.yml` | daily 02:30 UTC, every 3 h at :15, manual | Server-side job discovery into Firestore |
 
 ## 2. Add GitHub Secrets
 
@@ -51,7 +48,7 @@ Not used: LinkedIn/Indeed/Glassdoor (no permitted public API), JSearch/RapidAPI 
 |---|---|---|
 | `LLM_API_KEY` | Secret | Anthropic or OpenAI-compatible API key |
 | `LLM_PROVIDER` | Variable | `anthropic` (default) or `openai` |
-| `LLM_MODEL` | Variable | e.g. `claude-haiku-5-5` (default for Anthropic) |
+| `LLM_MODEL` | Variable | Set explicitly to a current model ID from your provider (see API_CONFIGURATION.md) |
 | `LLM_BASE_URL` | Variable | Only for OpenAI-compatible providers |
 | `LLM_MAX_JOBS_PER_RUN` | Variable | Default 20 — caps daily spend |
 
@@ -63,13 +60,13 @@ This is pay-as-you-go with the provider; check their current pricing. Without it
 |---|---|---|
 | `SMTP_URL` | Secret | e.g. `smtps://you%40gmail.com:APP-PASSWORD@smtp.gmail.com:465` (Gmail needs 2-step verification and an [app password](https://myaccount.google.com/apppasswords)) |
 | `NOTIFY_EMAIL` | Secret | Where to send it |
-| `DASHBOARD_URL` | Variable | Your Pages URL, included as a link |
+| `DASHBOARD_URL` | Variable | Optional; defaults to `https://aalapharathi.github.io/Job-Search/` |
 
 One email per refresh, only when new notifications were created.
 
 ## 3. Enable GitHub Pages
 
-Repo → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+Repo → **Settings → Pages → Build and deployment → Source: GitHub Actions** (not *Deploy from a branch* — that publishes the raw source and gives a blank page).
 
 Then **Actions → Deploy dashboard → Run workflow** (it also runs on every push to `main`). It runs the engine self-test, builds, and publishes. The URL appears in the workflow summary.
 
@@ -86,7 +83,7 @@ Then **Actions → Deploy dashboard → Run workflow** (it also runs on every pu
 `refresh-jobs.yml` runs:
 
 - **Daily at 02:30 UTC (08:00 IST)** — full discovery, verification of everything stored, scoring, notifications.
-- **Every 3 hours** — a quick check that only does work if you pressed *Refresh jobs* in the dashboard.
+- **Every 3 hours (at :15)** — a quick check that only does work if you pressed *Refresh jobs* in the dashboard.
 - **Manually** — *Run workflow* on GitHub (linked from the dashboard as *Run now on GitHub*).
 
 Actions minutes: free and unlimited on public repos; on private repos expect roughly 300–500 minutes a month, within the 2,000 free minutes. GitHub pauses scheduled workflows after 60 days with no repository activity — re-enable them from the Actions tab if that happens.
@@ -101,12 +98,20 @@ ADZUNA_APP_ID=… ADZUNA_APP_KEY=… npm run refresh:dry
 
 Each board prints ✓ with counts or ✗ with the reason (e.g. "Board not found" means the identifier is wrong). Board problems also appear in *Search preferences* after a run.
 
+## Deploying updates
+
+Commit and push to `main` (or edit on github.com). *Deploy dashboard* runs automatically; the new version is live when the run's `deploy` job is green. After changing any `VITE_FIREBASE_*` secret, run *Deploy dashboard* manually — those values are baked in at build time.
+
+Scheduled refreshes skip quietly (with a notice) until `FIREBASE_SERVICE_ACCOUNT` and `OWNER_UIDS` exist; a manual run fails with a clear error instead.
+
 ## Troubleshooting
+
+More in [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 | Symptom | Fix |
 |---|---|
 | "Connect Firebase to finish setup" on the live site | A `VITE_FIREBASE_*` secret is missing; add it and re-run *Deploy dashboard*. |
-| Google sign-in: "domain isn't authorised" | Add `YOUR-USERNAME.github.io` to Firebase Auth → Authorized domains. |
+| Google sign-in: "domain isn't authorised" | Add `aalapharathi.github.io` to Firebase Auth → Authorized domains. |
 | "Firestore denied access" | Publish `firestore.rules`. |
 | Blank page or 404 for assets | Pages source must be *GitHub Actions*; don't rename the repo without redeploying. |
 | Refresh workflow: "FIREBASE_SERVICE_ACCOUNT is not valid JSON" | Paste the entire key file, including the braces. |

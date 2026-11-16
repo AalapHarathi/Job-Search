@@ -1,5 +1,7 @@
 # Career Intel
 
+**Live:** <https://aalapharathi.github.io/Job-Search/> (shows a setup screen until Firebase secrets are added)
+
 A private job-discovery and application-tracking dashboard. It finds analyst-type vacancies on employers' own careers boards and job APIs, checks that each one is genuinely open, reads its visa-sponsorship stance, scores it against your resume, and tracks every application in Firebase.
 
 **Daily workflow:** open the dashboard → review new verified vacancies → check match score and sponsorship → open the employer's application page → apply yourself → *Mark applied* → track follow-ups and interviews.
@@ -81,12 +83,13 @@ firestore.rules    strict per-user Security Rules
 
 1. **Firebase** — follow [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
 2. **GitHub** — follow [DEPLOYMENT.md](DEPLOYMENT.md).
+   API keys: [API_CONFIGURATION.md](API_CONFIGURATION.md). Problems: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 3. Sign in, upload your resume in *Resume intelligence*, save *Search preferences*, then run the *Refresh jobs* workflow once.
 
 Local development:
 
 ```bash
-npm install
+npm ci                    # uses package-lock.json
 cp .env.example .env      # fill in the VITE_FIREBASE_* values
 npm run dev               # http://localhost:5173
 npm run test:engine       # scoring / sponsorship / parser checks

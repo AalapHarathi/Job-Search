@@ -22,16 +22,24 @@ These identify your project and are designed to be public; your data is protecte
 
 1. **Build → Authentication → Get started.**
 2. **Sign-in method** → enable **Email/Password** and **Google** (pick a support email for Google).
-3. **Settings → Authorized domains** → **Add domain** → `YOUR-GITHUB-USERNAME.github.io`. (`localhost` is there by default.) Without this, Google sign-in fails on the live site.
+3. **Settings → Authorized domains** → **Add domain** → `aalapharathi.github.io`. (`localhost` is there by default.) Without this, Google sign-in fails on the live site.
 4. Password reset emails work automatically. You can edit their wording under **Templates**.
 
-Keep it private: after you've created your own account, if your project shows **Settings → User actions → Enable create (sign-up)**, switch it off. Either way, every user's data is isolated by the rules, and the refresh job only processes the UIDs in `OWNER_UIDS`.
+**Keep it private:** after you've created your own account, if your project shows **Settings → User actions → Enable create (sign-up)**, switch it off. Either way, every user's data is isolated by the rules, and the refresh workflow only runs when `OWNER_UIDS` is set and only processes those UIDs.
+
+## Where each value goes
+
+| Value | Local dev | Production |
+|---|---|---|
+| `VITE_FIREBASE_*` (5 values) | `.env` (copy of `.env.example`) | GitHub **Secrets** (DEPLOYMENT.md §2) |
+| Service-account JSON | not needed for the app | GitHub Secret `FIREBASE_SERVICE_ACCOUNT` |
+| Your UID | — | GitHub Secret `OWNER_UIDS` |
 
 ## 3. Cloud Firestore
 
 1. **Build → Firestore Database → Create database.**
 2. Choose a location close to you (e.g. `asia-south1` Mumbai). This can't be changed later.
-3. Start in **production mode**.
+3. Start in **production mode** (denies everything until you publish the rules below).
 
 ## 4. Deploy the Security Rules
 
@@ -56,7 +64,9 @@ The scheduled job writes vacancies with the Admin SDK.
 
 1. **Project settings → Service accounts → Generate new private key.** A JSON file downloads.
 2. Open it, copy the **entire** contents, and save it as the GitHub secret `FIREBASE_SERVICE_ACCOUNT` (see DEPLOYMENT.md).
-3. Delete the downloaded file afterwards. Never commit it — `.gitignore` already blocks common key filenames.
+3. Delete the downloaded file afterwards. Never commit it — `.gitignore` blocks common key filenames, but don't rely on that.
+
+If a service-account key is ever exposed (committed, pasted in chat, shared): Project settings → Service accounts → *Manage service account permissions* (Google Cloud console) → open the account → **Keys** → delete that key → generate a new one → update the `FIREBASE_SERVICE_ACCOUNT` secret. Deleting it from git history alone is not enough.
 
 ## 6. Your user ID
 
