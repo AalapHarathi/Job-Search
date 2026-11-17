@@ -2,12 +2,16 @@
 // All dates are ISO-8601 strings so they round-trip identically through the
 // client SDK, the Admin SDK and Security Rules validation.
 
-export type SourceId = 'greenhouse' | 'lever' | 'ashby' | 'adzuna' | 'reed';
-export const ATS_SOURCES: SourceId[] = ['greenhouse', 'lever', 'ashby'];
+export type AtsSource = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'workable' | 'recruitee';
+export type SourceId = AtsSource | 'adzuna' | 'reed';
+export const ATS_SOURCES: SourceId[] = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workable', 'recruitee'];
 export const SOURCE_LABELS: Record<SourceId, string> = {
   greenhouse: 'Greenhouse',
   lever: 'Lever',
   ashby: 'Ashby',
+  smartrecruiters: 'SmartRecruiters',
+  workable: 'Workable',
+  recruitee: 'Recruitee',
   adzuna: 'Adzuna',
   reed: 'Reed',
 };
@@ -231,7 +235,7 @@ export interface CountryPref {
 }
 
 export interface BoardRef {
-  source: 'greenhouse' | 'lever' | 'ashby';
+  source: AtsSource;
   token: string;
   name: string | null;
   website: string | null;
