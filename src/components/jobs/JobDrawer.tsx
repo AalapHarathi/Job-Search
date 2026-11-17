@@ -5,7 +5,7 @@ import { Badge, Button, Drawer, Field, IconButton, Input, Select, Tabs, Textarea
 import { useUI } from '@/context/UIContext';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
-import { APPLICATION_STATUSES, SOURCE_LABELS, type ApplicationStatus, type Job, type MatchAnalysis } from '@shared/types';
+import { APPLICATION_STATUSES, ATS_SOURCES, SOURCE_LABELS, type ApplicationStatus, type Job, type MatchAnalysis } from '@shared/types';
 import { COUNTRY_NAMES } from '@shared/geo';
 import { fmtDate, fmtSalary, relDays, safeUrl, downloadBlob } from '@/lib/format';
 import { updateApplication, deleteApplication } from '@/lib/db';
@@ -120,7 +120,7 @@ function Overview({ job }: { job: Job }) {
         <ul className="mt-3 space-y-1.5">
           {job.sources.map((s) => (
             <li key={s.source + s.externalId} className="text-sm flex items-center gap-2">
-              <Badge tone={['greenhouse', 'lever', 'ashby'].includes(s.source) ? 'good' : 'neutral'}>{SOURCE_LABELS[s.source]}</Badge>
+              <Badge tone={ATS_SOURCES.includes(s.source) ? 'good' : 'neutral'}>{SOURCE_LABELS[s.source]}</Badge>
               <a href={safeUrl(s.sourceUrl) ?? '#'} target="_blank" rel="noopener noreferrer" className="link truncate">{hostPath(s.sourceUrl)}</a>
               <span className="text-xs text-faint ml-auto whitespace-nowrap">seen {relDays(s.lastSeenAt)}</span>
             </li>
