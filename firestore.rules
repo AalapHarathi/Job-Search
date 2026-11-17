@@ -28,7 +28,19 @@ service cloud.firestore {
       // Vacancies: created/closed only by the refresh job. You can change status and the match result.
       match /jobs/{jobId} {
         allow read: if owner(uid);
-        allow create, delete: if false;
+        // The browser may add a vacancy it has just re-read live from an employer's
+        // own careers board (Search → Save / Mark applied). Discovery fields are
+        // otherwise written only by the refresh job.
+        allow create: if owner(uid)
+          && request.resource.data.id == jobId
+          && request.resource.data.primarySource in ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workable', 'recruitee']
+          && validStatus(request.resource.data.status)
+          && str(request.resource.data.title, 300) && request.resource.data.title.size() > 0
+          && str(request.resource.data.company, 200) && request.resource.data.company.size() > 0
+          && str(request.resource.data.description, 60000)
+          && str(request.resource.data.applicationUrl, 2000) && request.resource.data.applicationUrl.matches('^https://.+')
+          && request.resource.data.sources is list && request.resource.data.sources.size() <= 10;
+        allow delete: if false;
         allow update: if owner(uid)
           && changedOnly(['status', 'statusUpdatedAt', 'match'])
           && validStatus(request.resource.data.status)

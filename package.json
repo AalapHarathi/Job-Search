@@ -9,8 +9,9 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "refresh": "tsx scripts/refresh/index.ts",
+    "index": "tsx scripts/search-index.ts",
     "refresh:dry": "tsx scripts/dryrun.ts",
-    "test:engine": "tsx scripts/selftest.ts"
+    "test:engine": "tsx scripts/selftest.ts && tsx scripts/selftest-ats.ts"
   },
   "dependencies": {
     "clsx": "2.1.1",

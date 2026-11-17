@@ -12,6 +12,7 @@ Nothing is ever submitted on your behalf, and no job, link, salary or date is in
 
 | Area | What it does |
 |---|---|
+| **Search jobs** | One search box (also in the top bar on every page) across open vacancies at 250+ employers’ own careers boards — Greenhouse, Lever, Ashby, SmartRecruiters, Workable and Recruitee. Filters for country, remote, posting window, sponsorship and platform. Every result has **Apply on company site** (the employer’s own application page), **Save**, **Applied?** and a live **Still open?** check. Saving re-reads the vacancy live from the employer before storing it. |
 | Overview | KPI strip, top 10 recommendations, recommended actions, refresh status, deadlines, discovery activity, pipeline, success rates, recent applications — all computed from Firestore. |
 | Discover jobs | Sortable, filterable table (country, title search, company, salary, experience, arrangement, sponsorship, match, posting window, employment type, verification). Every row: description, company site, *Apply on company site*, save, mark applied, not interested, match analysis. |
 | Recommended for me | Open vacancies above your score threshold that sponsorship doesn't rule out, ranked by match → freshness → sponsorship → deadline, each with its reasons. |
@@ -20,6 +21,15 @@ Nothing is ever submitted on your behalf, and no job, link, salary or date is in
 | Analytics | Applications by country, category, company, week/month; conversion, interview, success and rejection rates; average match; full history timeline. |
 | Search preferences | Countries and priority, titles, exclusions, freshness rules, recommendation threshold, employer boards, job APIs. |
 | Notifications | Strong new matches, saved jobs closing or disappearing, follow-ups, interviews, status changes, new roles at companies you've applied to. Optional email digest. |
+
+## How Search works
+
+1. `shared/companies.ts` lists employer careers boards, each checked live when added.
+2. Every 4 hours (and on every push) the **Deploy dashboard** workflow runs `npm run index`, which reads every board’s public API and publishes `data/jobs-index.json` with the site. Only public job-posting data goes in it.
+3. The Search page loads that index and filters it instantly in your browser.
+4. **Save** / **Applied?** re-read that single vacancy live from the employer’s board (the browser can call these APIs directly), score it against your resume, and store it in Firestore. The employer board is added to your preferences so the scheduled refresh keeps re-verifying it.
+
+**Not covered:** LinkedIn, Indeed, Naukri, Glassdoor and employers on Workday/Taleo/iCIMS. They don’t offer a public job API that can be used this way. Employers on the six supported platforms can be added in *Search preferences* or via the `EXTRA_BOARDS` repository variable (e.g. `greenhouse:monzo lever:acme`).
 
 ## Architecture
 

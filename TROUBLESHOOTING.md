@@ -13,6 +13,16 @@ Live site: <https://aalapharathi.github.io/Job-Search/> · Workflows: <https://g
 | Build step fails with TypeScript errors | Code error | Run `npm run build` locally; the same `tsc -b` runs in CI. |
 | Workflow annotation "Firebase not configured" | `VITE_FIREBASE_*` secrets missing | Add them (FIREBASE_SETUP.md §1), then *Actions → Deploy dashboard → Run workflow*. Secrets are baked in at build time, so a redeploy is required after changing them. |
 
+## Search
+
+| Symptom | Fix |
+|---|---|
+| “The job index hasn’t been built yet” | Run **Actions → Deploy dashboard → Run workflow** once. The index rebuilds every 4 hours. |
+| An employer shows ✗ in “employer boards searched” | Their board moved or was renamed. Check the build log line for that board and fix or remove it in `shared/companies.ts`. |
+| “No longer lists …” when saving | The employer removed the vacancy after the last index build. The live check stops you from saving it. |
+| “Couldn’t reach … careers board” | The employer’s ATS was briefly unavailable. Try again; nothing was saved. |
+| Save fails with permission-denied | Re-publish `firestore.rules`: the Search save path needs the rule that allows creating vacancies. |
+
 ## Sign-in
 
 | Symptom | Fix |

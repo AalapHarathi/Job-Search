@@ -19,11 +19,16 @@ Add every value below at **GitHub → AalapHarathi/Job-Search → Settings → S
 | Lever boards (`api.lever.co`) | No | — | 〃 | **Verified** |
 | Ashby boards (`api.ashbyhq.com`) | No | — | 〃 | **Verified** |
 | Adzuna Search API | Yes (free developer key) | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | GB, AU, IN, US, DE, NL, CA, SG, NZ | Unverified (aggregator; no employer link invented) |
+| SmartRecruiters Posting API | No | — | Employers in `shared/companies.ts` / your preferences | **Verified** |
+| Workable widget API | No | — | 〃 | **Verified** |
+| Recruitee careers API | No | — | 〃 | **Verified** |
 | Reed Jobseeker API | Yes (free) | `REED_API_KEY` | UK | Unverified |
 
 - **Adzuna:** register at <https://developer.adzuna.com> → *Dashboard* → copy *Application ID* and *Application Key*.
 - **Reed:** register at <https://www.reed.co.uk/developers/jobseeker> → copy the API key emailed/shown to you.
 - **Board identifiers:** the part of the employer's careers URL, e.g. `boards.greenhouse.io/monzo` → `greenhouse:monzo`, `jobs.lever.co/acme` → `lever:acme`, `jobs.ashbyhq.com/acme` → `ashby:acme`. Add them in the dashboard under *Search preferences*.
+
+**Search index:** no keys needed. Optionally set the repository *Variable* `EXTRA_BOARDS` (space-separated, e.g. `greenhouse:monzo smartrecruiters:Visa workable:acme`) to add employers to Search without editing code.
 
 Not supported: LinkedIn, Indeed, Glassdoor, Workday — no permitted public job-search API for personal use.
 
