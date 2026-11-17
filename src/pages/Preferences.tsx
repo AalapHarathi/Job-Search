@@ -90,7 +90,7 @@ export function Preferences() {
       </Section>
 
       <Section title="Employer career boards">
-        <p className="text-xs text-muted mb-3 max-w-[76ch]">These are the most reliable source: jobs come straight from the employer’s applicant tracking system, so they’re verified and link to the real application page. Find the identifier in the careers URL — <code>boards.greenhouse.io/<b>acme</b></code>, <code>jobs.lever.co/<b>acme</b></code> (prefix <code>eu:</code> for jobs.eu.lever.co), <code>jobs.ashbyhq.com/<b>acme</b></code>.</p>
+        <p className="text-xs text-muted mb-3 max-w-[76ch]">These are the most reliable source: jobs come straight from the employer’s applicant tracking system, so they’re verified and link to the real application page. Find the identifier in the careers URL — <code>boards.greenhouse.io/<b>acme</b></code>, <code>jobs.lever.co/<b>acme</b></code> (prefix <code>eu:</code> for jobs.eu.lever.co), <code>jobs.ashbyhq.com/<b>acme</b></code>, <code>jobs.smartrecruiters.com/<b>Acme</b></code>, <code>apply.workable.com/<b>acme</b></code>, <code><b>acme</b>.recruitee.com</code>.</p>
         {boardErrors.length > 0 && <div className="mb-3 rounded-lg border border-warn/30 bg-warn/5 p-3 text-sm"><p className="font-medium text-warn">Last refresh couldn’t find some boards</p><ul className="mt-1 text-muted text-xs space-y-0.5">{boardErrors.map((e) => <li key={e}>{e}</li>)}</ul></div>}
         <div className="border border-line rounded-lg divide-y divide-line">
           {p.boards.map((b) => (
@@ -111,7 +111,7 @@ export function Preferences() {
           upd({ boards: [...p.boards, { source: board.source, token, name: board.name?.trim() || null, website: board.website?.trim() || null }] });
           setBoard({ ...board, token: '', name: '', website: '' });
         }}>
-          <Select value={board.source} onChange={(e) => setBoard({ ...board, source: e.target.value as BoardRef['source'] })} aria-label="ATS"><option value="greenhouse">Greenhouse</option><option value="lever">Lever</option><option value="ashby">Ashby</option></Select>
+          <Select value={board.source} onChange={(e) => setBoard({ ...board, source: e.target.value as BoardRef['source'] })} aria-label="ATS"><option value="greenhouse">Greenhouse</option><option value="lever">Lever</option><option value="ashby">Ashby</option><option value="smartrecruiters">SmartRecruiters</option><option value="workable">Workable</option><option value="recruitee">Recruitee</option></Select>
           <Input placeholder="Board identifier" value={board.token} onChange={(e) => setBoard({ ...board, token: e.target.value })} aria-label="Board identifier" />
           <Input placeholder="Company name (optional)" value={board.name ?? ''} onChange={(e) => setBoard({ ...board, name: e.target.value })} aria-label="Company name" />
           <Input placeholder="https://company.com (optional)" value={board.website ?? ''} onChange={(e) => setBoard({ ...board, website: e.target.value })} aria-label="Company website" />
