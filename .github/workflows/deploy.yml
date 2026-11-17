@@ -4,6 +4,8 @@ name: Deploy dashboard
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '40 */4 * * *' # rebuild the job search index every 4 hours
   workflow_dispatch:
 
 permissions:
@@ -29,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Engine self-test
+      - name: Engine + connector self-tests
         run: npm run test:engine
 
       - name: Check Firebase web config secrets
@@ -61,11 +63,20 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
         run: npm run build
 
+      - name: Build job search index (employer careers boards)
+        # A partial failure still publishes; the Search page shows which boards failed.
+        continue-on-error: true
+        env:
+          OUT: dist/data/jobs-index.json
+          EXTRA_BOARDS: ${{ vars.EXTRA_BOARDS }}
+        run: npm run index
+
       - name: Verify build output
         run: |
           test -f dist/index.html || { echo "::error::dist/index.html was not produced"; exit 1; }
           if grep -q '/src/main.tsx' dist/index.html; then echo "::error::dist/index.html still references source files"; exit 1; fi
           ls -la dist dist/assets | head -40
+          if [ -f dist/data/jobs-index.json ]; then ls -la dist/data; else echo "::warning title=No search index::dist/data/jobs-index.json was not built; Search will show 'index not built'."; fi
 
       - uses: actions/configure-pages@v5
 
