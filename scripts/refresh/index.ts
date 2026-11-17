@@ -9,9 +9,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { db } from './firebase';
 import { pool } from './http';
 import type { BoardFetch, RawJob, SourceReport } from './types';
-import { fetchGreenhouse } from './sources/greenhouse';
-import { fetchLever } from './sources/lever';
-import { fetchAshby } from './sources/ashby';
+import { fetchBoard } from './sources/boards';
 import { fetchAdzuna, ADZUNA_COUNTRIES } from './sources/adzuna';
 import { searchReed, enrichReed } from './sources/reed';
 import { checkPage } from './verify';
@@ -32,7 +30,7 @@ const MODE = process.env.REFRESH_MODE === 'queue' ? 'queue' : 'full';
 const DAILY_UTC_HOUR = 2;
 const DAILY_UTC_MIN = 30;
 const MAX_DESC = 30_000;
-const SOURCE_PRIORITY: SourceId[] = ['greenhouse', 'lever', 'ashby', 'reed', 'adzuna'];
+const SOURCE_PRIORITY: SourceId[] = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workable', 'recruitee', 'reed', 'adzuna'];
 
 function nextScheduled(from = new Date()): string {
   const d = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate(), DAILY_UTC_HOUR, DAILY_UTC_MIN));
@@ -85,9 +83,7 @@ async function refreshUser(f: Firestore, uid: string) {
     // ---- 1. Employer ATS boards ------------------------------------------
     const boardFetches: BoardFetch[] = await pool(prefs.boards, 4, async (b: BoardRef) => {
       try {
-        if (b.source === 'greenhouse') return await fetchGreenhouse(b);
-        if (b.source === 'lever') return await fetchLever(b);
-        return await fetchAshby(b);
+        return await fetchBoard(b);
       } catch (e) {
         return { board: b.token, source: b.source, ok: false, jobs: [], error: (e as Error).message };
       }
