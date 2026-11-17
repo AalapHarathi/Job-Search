@@ -2,9 +2,7 @@
 // Uses the starter boards plus any you pass: npm run refresh:dry -- greenhouse:monzo lever:eu:acme
 import { STARTER_BOARDS, DEFAULT_TARGET_TITLES } from '../shared/defaults';
 import type { BoardRef } from '../shared/types';
-import { fetchGreenhouse } from './refresh/sources/greenhouse';
-import { fetchLever } from './refresh/sources/lever';
-import { fetchAshby } from './refresh/sources/ashby';
+import { fetchBoard } from './refresh/sources/boards';
 import { fetchAdzuna } from './refresh/sources/adzuna';
 import { searchReed } from './refresh/sources/reed';
 import { isRelevantTitle } from '../shared/titles';
@@ -18,7 +16,7 @@ const extra: BoardRef[] = process.argv.slice(2).map((a) => {
 const boards = extra.length ? extra : STARTER_BOARDS;
 
 for (const b of boards) {
-  const r = b.source === 'greenhouse' ? await fetchGreenhouse(b) : b.source === 'lever' ? await fetchLever(b) : await fetchAshby(b);
+  const r = await fetchBoard(b);
   if (!r.ok) { console.log(`✗ ${b.source}:${b.token} — ${r.error}`); continue; }
   const rel = r.jobs.filter((j) => isRelevantTitle(j.title));
   console.log(`✓ ${b.source}:${b.token} — ${r.jobs.length} open roles, ${rel.length} analyst-type`);
