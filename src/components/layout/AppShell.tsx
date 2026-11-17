@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Menu as MenuIcon, Moon, Sun, LogOut, X } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Menu as MenuIcon, Moon, Sun, LogOut, X, Search as SearchIcon } from 'lucide-react';
 import clsx from 'clsx';
 import { Sidebar } from './Sidebar';
 import { NotificationsBell } from './NotificationsBell';
@@ -20,6 +20,22 @@ function Brand() {
       <svg viewBox="0 0 32 32" className="size-6" aria-hidden><rect width="32" height="32" rx="7" fill="rgb(var(--accent))" /><rect x="7" y="17" width="4" height="8" rx="1" fill="white" /><rect x="14" y="12" width="4" height="13" rx="1" fill="white" /><rect x="21" y="7" width="4" height="18" rx="1" fill="white" /></svg>
       <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">Career Intel</span>
     </div>
+  );
+}
+
+function HeaderSearch() {
+  const navigate = useNavigate();
+  const loc = useLocation();
+  const [q, setQ] = useState('');
+  if (loc.pathname === '/search') return <div className="flex-1" />;
+  return (
+    <form role="search" className="flex-1 flex items-center gap-1.5 max-w-xl" onSubmit={(e) => { e.preventDefault(); navigate(q.trim() ? `/search?q=${encodeURIComponent(q.trim())}` : '/search'); setQ(''); }}>
+      <div className="relative flex-1">
+        <SearchIcon className="size-4 text-faint absolute left-2.5 top-1/2 -translate-y-1/2" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search jobs at 250+ employers…" aria-label="Search jobs" className="input h-8 pl-8 text-sm w-full" />
+      </div>
+      <button type="submit" className="hidden sm:inline-flex h-8 items-center rounded-lg bg-accent px-3 text-sm font-medium text-white dark:text-[#0f1115] hover:bg-accent/90">Search</button>
+    </form>
   );
 }
 
@@ -51,7 +67,8 @@ export function AppShell() {
       <div className="min-w-0 flex flex-col">
         <header className="sticky top-0 z-30 h-14 flex items-center gap-2 px-4 lg:px-8 border-b border-line bg-canvas/85 backdrop-blur" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <IconButton label="Open menu" className="lg:hidden -ml-1" onClick={() => setMobileNav(true)}><MenuIcon className="size-4" /></IconButton>
-          <div className="flex-1" />
+          <HeaderSearch />
+          <div className="hidden md:block flex-1" />
           <RefreshPill />
           <NotificationsBell />
           <IconButton label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} onClick={toggle}>{theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}</IconButton>

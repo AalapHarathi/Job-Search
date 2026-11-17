@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import {
-  LayoutGrid, Compass, Star, Bookmark, Send, KanbanSquare, XCircle, FileText, BarChart3, SlidersHorizontal, Settings,
+  LayoutGrid, Search, Compass, Star, Bookmark, Send, KanbanSquare, XCircle, FileText, BarChart3, SlidersHorizontal, Settings,
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { recommended, isOpen } from '@/lib/jobQueries';
@@ -21,6 +21,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const groups: { label: string | null; items: { to: string; label: string; icon: typeof Compass; count?: number }[] }[] = [
     { label: null, items: [
+      { to: '/search', label: 'Search jobs', icon: Search },
       { to: '/', label: 'Overview', icon: LayoutGrid },
       { to: '/discover', label: 'Discover jobs', icon: Compass, count: counts.discover },
       { to: '/recommended', label: 'Recommended for me', icon: Star, count: counts.rec },
