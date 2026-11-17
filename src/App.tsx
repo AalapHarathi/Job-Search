@@ -10,6 +10,7 @@ import { SetupRequired } from '@/pages/SetupRequired';
 import { Login } from '@/pages/Login';
 import { Overview } from '@/pages/Overview';
 import { Discover } from '@/pages/Discover';
+import { Search } from '@/pages/Search';
 import { Recommended } from '@/pages/Recommended';
 import { Saved } from '@/pages/Saved';
 import { Applied } from '@/pages/Applied';
@@ -31,6 +32,7 @@ function Gate() {
         <Routes>
           <Route element={<AppShell />}>
             <Route index element={<Overview />} />
+            <Route path="search" element={<Search />} />
             <Route path="discover" element={<Discover />} />
             <Route path="recommended" element={<Recommended />} />
             <Route path="saved" element={<Saved />} />
